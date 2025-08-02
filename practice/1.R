@@ -41,3 +41,21 @@ my_mode <- function(x){
 
 	return(max_val)
 }
+
+rango <- function(x){
+	max(x) - min(x)
+}
+
+varianza <- function(x){
+	var(x)
+}
+
+desviacion_estandar <- function(x){
+	sd(x)
+}
+
+percentil <- function(x, p){
+	x_ordered <- sort(x)
+	#in process
+	quantile(x, p)
+}
