@@ -46,6 +46,17 @@ rango <- function(x){
 	max(x) - min(x)
 }
 
+
+varianza_manual <- function(x){
+	n <- length(x)
+
+	suma<-sum((x-mean(x))^2)/(n-1)
+	return(suma)
+}
+
+desviacion_estandar_manual <- function(x){
+	return(sqrt(varianza_manual(x)))	
+}
 varianza <- function(x){
 	var(x)
 }
@@ -54,8 +65,24 @@ desviacion_estandar <- function(x){
 	sd(x)
 }
 
+quantile_manual <- function(x, x_ordered, p){
+	n <- length(x)	
+	res <- c()
+	for (p in probs) {
+		pos <-p*(n-1)+1
+		k<- floor(pos)
+		delta <- pos - k
+		if(k<n){
+			valor <- x[k] + delta * (x[k+1]-x[k])
+		}else{
+			valor <- x[n]
+		}
+		res <- c(res, valor)
+	}
+	return(res)<-paste0(probs*100, "%")
+	return(res)
+}
 percentil <- function(x, p){
 	x_ordered <- sort(x)
-	#in process
-	quantile(x, p)
+	quantile_manual(x, x_ordered,p/100)
 }
