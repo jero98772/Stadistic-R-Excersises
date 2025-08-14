@@ -1,7 +1,7 @@
 ---
 title: "EXAMEN 1 - LABORATORIO Estadística General"
 subtitle: "Análisis Estadístico Descriptivo - Pizza Delivery Dataset"
-author: "Victor Daniel Arango Sohm"
+author: "examen falso"
 date: "`r Sys.Date()`"
 output: 
   html_document:
