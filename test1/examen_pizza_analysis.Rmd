@@ -1,0 +1,290 @@
+---
+title: "EXAMEN 1 - LABORATORIO Estadística General"
+subtitle: "Análisis Estadístico Descriptivo - Pizza Delivery Dataset"
+author: "Victor Daniel Arango Sohm"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Introducción
+
+Este análisis examina los datos de entrega de pizza de un restaurante italiano durante mayo de 2014, enfocándose en estadística descriptiva y visualización de datos.
+
+# Carga y preparación de datos
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+
+# Cargar los datos
+datos <- read.csv("pizzadelivery.csv", header = FALSE, stringsAsFactors = FALSE)
+
+# Asignar nombres de columnas
+colnames(datos) <- c("id", "day", "date", "time", "operator", "branch", 
+                     "driver", "temperature", "bill", "pizzas", 
+                     "free_wine", "got_wine", "discount_customer")
+
+# Convertir variables a tipos apropiados
+datos$id <- as.numeric(datos$id)
+datos$time <- as.numeric(datos$time)
+datos$temperature <- as.numeric(datos$temperature)
+datos$bill <- as.numeric(datos$bill)
+datos$pizzas <- as.numeric(datos$pizzas)
+datos$free_wine <- as.numeric(datos$free_wine)
+datos$got_wine <- as.numeric(datos$got_wine)
+datos$discount_customer <- as.numeric(datos$discount_customer)
+
+# Convertir variables categóricas a factor
+datos$day <- as.factor(datos$day)
+datos$operator <- as.factor(datos$operator)
+datos$branch <- as.factor(datos$branch)
+datos$driver <- as.factor(datos$driver)
+
+# Mostrar estructura de los datos
+str(datos)
+head(datos)
+```
+
+# Problema 1: Clasificación de Variables
+
+## Análisis de Variables
+
+```{r}
+# Crear tabla de clasificación de variables
+clasificacion <- data.frame(
+  Variable = c("id", "day", "date", "time", "operator", "branch", "driver", 
+               "temperature", "bill", "pizzas", "free_wine", "got_wine", "discount_customer"),
+  Tipo = c("Cuantitativa", "Categórica", "Categórica", "Cuantitativa", 
+           "Categórica", "Categórica", "Categórica", "Cuantitativa", 
+           "Cuantitativa", "Cuantitativa", "Categórica", "Categórica", "Categórica"),
+  Subtipo = c("Discreta", "Nominal", "Ordinal", "Continua", 
+              "Nominal", "Nominal", "Nominal", "Continua", 
+              "Continua", "Discreta", "Nominal", "Nominal", "Nominal"),
+  Descripción = c("Identificador único", "Día de la semana", "Fecha del pedido", 
+                  "Tiempo de entrega (min)", "Operador telefónico", "Sucursal del restaurant", 
+                  "Repartidor", "Temperatura de entrega (°C)", "Cuenta total (euros)", 
+                  "Número de pizzas", "Vino gratis (0/1)", "Llevó vino (0/1)", "Cliente con descuento (0/1)")
+)
+
+knitr::kable(clasificacion, caption = "Clasificación de Variables")
+```
+
+**Conclusión Problema 1:** 
+Las variables se clasifican en 6 cuantitativas (4 continuas y 2 discretas) y 7 categóricas (6 nominales y 1 ordinal). Esta clasificación es fundamental para seleccionar los métodos estadísticos apropiados.
+
+# Problema 2: Análisis de la Variable "driver"
+
+```{r}
+# Análisis de frecuencias para driver
+freq_driver <- table(datos$driver)
+prop_driver <- prop.table(freq_driver)
+
+# Crear tabla de frecuencias
+tabla_driver <- data.frame(
+  Driver = names(freq_driver),
+  Frecuencia_Absoluta = as.numeric(freq_driver),
+  Frecuencia_Relativa = round(as.numeric(prop_driver), 4),
+  Porcentaje = round(as.numeric(prop_driver) * 100, 2)
+)
+
+knitr::kable(tabla_driver, caption = "Tabla de Frecuencias - Variable Driver")
+
+# Gráfico de barras
+p1 <- ggplot(datos, aes(x = driver)) +
+  geom_bar(fill = "steelblue", alpha = 0.7) +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Distribución de Repartidores",
+       x = "Repartidor",
+       y = "Frecuencia Absoluta") +
+  theme_minimal()
+
+# Gráfico circular
+pie_data <- tabla_driver
+p2 <- ggplot(pie_data, aes(x = "", y = Frecuencia_Absoluta, fill = Driver)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Distribución Porcentual de Repartidores") +
+  theme_void() +
+  geom_text(aes(label = paste0(Porcentaje, "%")), 
+            position = position_stack(vjust = 0.5))
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+**Conclusión Problema 2:** 
+La distribución de entregas por repartidor muestra que `r names(which.max(freq_driver))` realizó el mayor número de entregas (`r max(freq_driver)` entregas, `r round(max(prop_driver)*100, 1)`%), mientras que `r names(which.min(freq_driver))` realizó el menor número (`r min(freq_driver)` entregas, `r round(min(prop_driver)*100, 1)`%). Esto sugiere una distribución desigual de la carga de trabajo entre repartidores.
+
+# Problema 3: Histograma de Temperature
+
+```{r}
+# Estadísticas básicas de temperature
+media_temp <- mean(datos$temperature, na.rm = TRUE)
+mediana_temp <- median(datos$temperature, na.rm = TRUE)
+
+# Histograma
+hist_temp <- ggplot(datos, aes(x = temperature)) +
+  geom_histogram(bins = 10, fill = "lightcoral", alpha = 0.7, color = "black") +
+  geom_vline(xintercept = media_temp, color = "red", linetype = "dashed", size = 1) +
+  geom_text(aes(x = media_temp, y = Inf, label = paste("Media =", round(media_temp, 2))), 
+            vjust = 2, hjust = -0.1, color = "red") +
+  labs(title = "Histograma de Temperatura de Entrega",
+       x = "Temperatura (°C)",
+       y = "Frecuencia Absoluta") +
+  theme_minimal()
+
+print(hist_temp)
+
+# Determinar el intervalo donde se encuentra la media
+hist_data <- hist(datos$temperature, plot = FALSE, breaks = 10)
+intervalos <- data.frame(
+  Intervalo = paste0("[", round(hist_data$breaks[-length(hist_data$breaks)], 1), 
+                     ", ", round(hist_data$breaks[-1], 1), ")"),
+  Frecuencia = hist_data$counts
+)
+
+# Encontrar en qué intervalo está la media
+intervalo_media <- which(media_temp >= hist_data$breaks[-length(hist_data$breaks)] & 
+                        media_temp < hist_data$breaks[-1])
+
+knitr::kable(intervalos, caption = "Intervalos de Clase - Temperatura")
+```
+
+**Conclusión Problema 3:** 
+La media aritmética de la temperatura (`r round(media_temp, 2)`°C) se encuentra en el intervalo `r intervalos$Intervalo[intervalo_media]`, que corresponde al intervalo con mayor frecuencia en el histograma. Esto indica una distribución relativamente simétrica de las temperaturas de entrega.
+
+# Problema 4: Análisis Descriptivo de "time"
+
+```{r}
+# Estadísticas descriptivas completas
+media_time <- mean(datos$time, na.rm = TRUE)
+mediana_time <- median(datos$time, na.rm = TRUE)
+desv_time <- sd(datos$time, na.rm = TRUE)
+coef_var <- (desv_time / media_time) * 100
+
+# Estadísticas adicionales
+stats_time <- data.frame(
+  Estadística = c("Media", "Mediana", "Desviación Estándar", "Coeficiente de Variación (%)",
+                  "Mínimo", "Máximo", "Primer Cuartil", "Tercer Cuartil", "Rango"),
+  Valor = c(round(media_time, 2), round(mediana_time, 2), round(desv_time, 2), 
+            round(coef_var, 2), min(datos$time, na.rm = TRUE), 
+            max(datos$time, na.rm = TRUE), 
+            round(quantile(datos$time, 0.25, na.rm = TRUE), 2),
+            round(quantile(datos$time, 0.75, na.rm = TRUE), 2),
+            max(datos$time, na.rm = TRUE) - min(datos$time, na.rm = TRUE))
+)
+
+knitr::kable(stats_time, caption = "Estadísticas Descriptivas - Tiempo de Entrega")
+
+# Histograma y boxplot
+p1_time <- ggplot(datos, aes(x = time)) +
+  geom_histogram(bins = 15, fill = "lightblue", alpha = 0.7, color = "black") +
+  geom_vline(xintercept = media_time, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = mediana_time, color = "blue", linetype = "dashed") +
+  labs(title = "Histograma - Tiempo de Entrega",
+       x = "Tiempo (minutos)",
+       y = "Frecuencia") +
+  theme_minimal()
+
+p2_time <- ggplot(datos, aes(y = time)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
+  labs(title = "Boxplot - Tiempo de Entrega",
+       y = "Tiempo (minutos)") +
+  theme_minimal()
+
+grid.arrange(p1_time, p2_time, ncol = 2)
+```
+
+**Conclusión Problema 4:** 
+El tiempo promedio de entrega es `r round(media_time, 2)` minutos con una mediana de `r round(mediana_time, 2)` minutos. El coeficiente de variación del `r round(coef_var, 2)`% indica una variabilidad moderada. La diferencia entre media y mediana sugiere una ligera asimetría en la distribución de los tiempos de entrega.
+
+# Problema 5: Análisis de Desempeño por Repartidor
+
+```{r}
+# Análisis por repartidor
+analisis_driver <- datos %>%
+  group_by(driver) %>%
+  summarise(
+    Entregas = n(),
+    Tiempo_Promedio = round(mean(time, na.rm = TRUE), 2),
+    Tiempo_Mediana = round(median(time, na.rm = TRUE), 2),
+    Desv_Estandar = round(sd(time, na.rm = TRUE), 2),
+    Coef_Variacion = round((sd(time, na.rm = TRUE) / mean(time, na.rm = TRUE)) * 100, 2),
+    Tiempo_Min = min(time, na.rm = TRUE),
+    Tiempo_Max = max(time, na.rm = TRUE)
+  ) %>%
+  arrange(Tiempo_Promedio)
+
+knitr::kable(analisis_driver, caption = "Análisis de Desempeño por Repartidor")
+
+# Boxplot comparativo
+boxplot_drivers <- ggplot(datos, aes(x = driver, y = time, fill = driver)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_hline(yintercept = 40, color = "red", linetype = "dashed", size = 1) +
+  labs(title = "Distribución de Tiempos de Entrega por Repartidor",
+       x = "Repartidor",
+       y = "Tiempo (minutos)",
+       caption = "Línea roja: 40 minutos (límite para vino gratis)") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+print(boxplot_drivers)
+
+# Gráfico de barras para tiempo promedio
+bar_promedio <- ggplot(analisis_driver, aes(x = reorder(driver, Tiempo_Promedio), 
+                                           y = Tiempo_Promedio, fill = driver)) +
+  geom_bar(stat = "identity", alpha = 0.7) +
+  geom_text(aes(label = Tiempo_Promedio), hjust = -0.1) +
+  labs(title = "Tiempo Promedio de Entrega por Repartidor",
+       x = "Repartidor",
+       y = "Tiempo Promedio (minutos)") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+print(bar_promedio)
+
+# Análisis de entregas tardías (>40 min)
+entregas_tardias <- datos %>%
+  group_by(driver) %>%
+  summarise(
+    Total_Entregas = n(),
+    Entregas_Tardias = sum(time > 40, na.rm = TRUE),
+    Porcentaje_Tardias = round((Entregas_Tardias / Total_Entregas) * 100, 2)
+  ) %>%
+  arrange(Porcentaje_Tardias)
+
+knitr::kable(entregas_tardias, caption = "Análisis de Entregas Tardías por Repartidor")
+```
+
+**Conclusión Problema 5:** 
+Basándose únicamente en el tiempo de entrega, **`r analisis_driver$driver[1]`** tuvo el mejor desempeño durante mayo con:
+
+- Tiempo promedio más bajo: `r analisis_driver$Tiempo_Promedio[1]` minutos
+- Menor porcentaje de entregas tardías: `r entregas_tardias$Porcentaje_Tardias[entregas_tardias$driver == analisis_driver$driver[1]]`%
+- Coeficiente de variación: `r analisis_driver$Coef_Variacion[1]`%
+
+El boxplot muestra que `r analisis_driver$driver[1]` tiene la distribución más consistente y con menor tiempo mediano. En contraste, `r analisis_driver$driver[nrow(analisis_driver)]` presenta el peor desempeño con `r analisis_driver$Tiempo_Promedio[nrow(analisis_driver)]` minutos promedio y mayor variabilidad.
+
+# Resumen General
+
+Este análisis descriptivo revela patrones importantes en el servicio de entrega:
+
+1. **Variables**: Correctamente clasificadas entre categóricas y cuantitativas
+2. **Repartidores**: Distribución desigual de entregas entre el equipo
+3. **Temperatura**: Distribución simétrica alrededor de `r round(media_temp, 2)`°C
+4. **Tiempos**: Promedio de `r round(media_time, 2)` minutos con variabilidad moderada
+5. **Desempeño**: `r analisis_driver$driver[1]` es el repartidor más eficiente
+
+Estas conclusiones pueden guiar decisiones operativas para mejorar el servicio de entrega.
