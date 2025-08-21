@@ -1,0 +1,15 @@
+### Block 1: Introduction to Probability
+
+### 1. Dice Roll
+# Probability of getting an even number (2,4,6) when rolling a fair die
+```{r}
+p_even <- 3/6
+p_even
+```
+# Simulate 1000 rolls
+```{r}
+set.seed(123)
+rolls <- sample(1:6,size =1000 , replace =TRUE)
+freq_even <- mean(rolls %% 2 == 0)
+freq_even
+```
