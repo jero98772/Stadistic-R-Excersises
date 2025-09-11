@@ -1,0 +1,143 @@
+Te explico cada una de tus preguntas:
+
+## 1. ¿Por qué `P_ambas <- P_M + P_B - P_union`?
+
+Esta es la **fórmula de la probabilidad de la unión**:
+
+```
+P(A ∪ B) = P(A) + P(B) - P(A ∩ B)
+```
+
+Despejando P(A ∩ B):
+```
+P(A ∩ B) = P(A) + P(B) - P(A ∪ B)
+```
+
+- Si solo sumaramos P(M) + P(B) = 0.7 + 0.4 = 1.1
+- Pero sabemos que P(M ∪ B) = 0.8
+- La diferencia (1.1 - 0.8 = 0.3) es lo que se "repite" = P(ambas)
+
+## 2. ¿Qué hace `sample(caras, n, replace = TRUE)`?
+
+Esta función **simula lanzar el dado n veces**:
+
+```r
+caras <- c(1,1,1,2,2,3,4,4)  # El dado físico
+sample(caras, 10, replace = TRUE)
+# Ejemplo resultado: 1 4 1 2 4 3 1 1 2 4
+```
+
+- `caras`: el vector con todas las caras del dado
+- `n`: cuántos lanzamientos hacer
+- `replace = TRUE`: después de cada lanzamiento, "devuelve" la cara al dado
+
+## 3. ¿Qué filtra `mean(lanzamientos == 2)`?
+
+No "filtra", **cuenta la proporción**:
+
+```r
+lanzamientos <- c(1, 4, 1, 2, 4, 3, 1, 1, 2, 4)
+lanzamientos == 2
+# Resultado: FALSE FALSE FALSE TRUE FALSE FALSE FALSE FALSE TRUE FALSE
+
+mean(lanzamientos == 2)
+# Resultado: 0.2 (2 de 10 son TRUE = 20%)
+```
+
+Cuenta cuántos lanzamientos fueron "2" y lo divide por el total.
+
+## 4. ¿Por qué agregar otro 4 para doble probabilidad?
+
+**Original**: `c(1,1,1,2,2,3,4,4)` - 8 caras, cada 4 aparece 2/8 = 25%
+
+**Cargado**: `c(1,1,1,2,2,3,4,4,4)` - 9 caras, cada 4 aparece 3/9 = 33.3%
+
+Pero el problema dice "doble probabilidad que las otras". Debería ser:
+
+```r
+# Más correcto para "doble probabilidad":
+# 7 caras normales (1/9 cada una) + 2 caras de 4 (2/9 total)
+caras_cargado <- c(1,1,1,2,2,3,4,4)  # Pero con pesos diferentes
+# O simular con probabilidades:
+sample(1:4, 1000, replace=TRUE, prob=c(3/9, 2/9, 1/9, 2/9))
+```
+
+El código del ejercicio es una aproximación simple agregando una cara extra del 4.
+
+
+
+
+
+
+
+Te explico el código paso a paso según las preguntas del problema:
+
+## **1. Generar muestra de 1000 compradores (0=látex, 1=semiesmaltada)**
+
+```r
+tipo_pintura <- rbinom(n, 1, 1-P_latex)
+```
+
+- `rbinom(1000, 1, 0.25)` genera 1000 ensayos Bernoulli
+- Probabilidad de éxito = `1-P_latex` = 1-0.75 = 0.25 (probabilidad semiesmaltada)
+- Resultado: vector con 0s y 1s donde:
+  - **0 = látex** (≈75% de las veces)
+  - **1 = semiesmaltada** (≈25% de las veces)
+
+## **2. Generar vector de compradores de rodillos**
+
+```r
+compra_rodillo <- numeric(n)  # Vector vacío de 1000 ceros
+for(i in 1:n) {
+  if(tipo_pintura[i] == 0) {  # Si compra LÁTEX
+    compra_rodillo[i] <- rbinom(1, 1, P_rodillo_latex)  # 60% prob rodillo
+  } else {  # Si compra SEMIESMALTADA
+    compra_rodillo[i] <- rbinom(1, 1, P_rodillo_semi)   # 30% prob rodillo
+  }
+}
+```
+
+Para cada cliente:
+- Si compró látex (0) → 60% probabilidad de comprar rodillo
+- Si compró semiesmaltada (1) → 30% probabilidad de comprar rodillo
+
+## **Estimaciones de las preguntas:**
+
+### **1. P(cliente compre rodillo)**
+```r
+P_rodillo_sim <- mean(compra_rodillo)  # = 0.529
+```
+Cuenta cuántos 1s hay en `compra_rodillo` y divide por 1000.
+
+### **2. P(pintura sea látex | compra rodillo)**
+```r
+P_latex_dado_rodillo_sim <- mean(tipo_pintura[compra_rodillo == 1] == 0)  # = 0.856
+```
+
+Paso a paso:
+- `compra_rodillo == 1` → índices de quienes compraron rodillo
+- `tipo_pintura[compra_rodillo == 1]` → tipo de pintura de esos clientes
+- `== 0` → cuáles de esos compraron látex
+- `mean()` → proporción de látex entre los que compraron rodillo
+
+## **Cálculos teóricos (Teorema de Bayes):**
+
+### **P(rodillo) usando probabilidad total:**
+```r
+P_rodillo_teorica <- P_latex * P_rodillo_latex + (1-P_latex) * P_rodillo_semi
+                  = 0.75 * 0.60 + 0.25 * 0.30
+                  = 0.45 + 0.075 = 0.525
+```
+
+### **P(látex | rodillo) usando Bayes:**
+```r
+P_latex_dado_rodillo_teorica <- (P_rodillo_latex * P_latex) / P_rodillo_teorica
+                              = (0.60 * 0.75) / 0.525
+                              = 0.45 / 0.525 = 0.857
+```
+
+## **¿Por qué coinciden simulación y teoría?**
+
+- **Simulación**: 0.529 ≈ 0.525 y 0.856 ≈ 0.857
+- La **Ley de Grandes Números** hace que con 1000 muestras, los resultados empíricos converjan a los teóricos
+- Confirma que el **Teorema de Bayes** funciona correctamente
